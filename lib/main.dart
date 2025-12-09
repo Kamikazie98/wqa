@@ -1,3 +1,4 @@
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -9,6 +10,10 @@ import 'app.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/chat_controller.dart';
 import 'controllers/assistant_controller.dart';
+import 'controllers/habit_controller.dart';
+import 'controllers/productivity_controller.dart';
+import 'controllers/activity_controller.dart';
+import 'controllers/groups_controller.dart';
 import 'services/api_client.dart';
 import 'services/assistant_service.dart';
 import 'services/action_executor.dart';
@@ -30,6 +35,10 @@ import 'services/chat_analysis_service.dart';
 import 'services/smart_reminders_service.dart';
 import 'services/notification_triage_service.dart';
 import 'screens/permissions_screen.dart';
+import 'screens/habits_screen.dart';
+import 'screens/productivity_screen.dart';
+import 'screens/activity_screen.dart';
+import 'screens/groups_screen.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -208,6 +217,18 @@ class WaiqRootApp extends StatelessWidget {
         ChangeNotifierProvider<AssistantController>.value(
           value: assistantController,
         ),
+        ChangeNotifierProvider<HabitController>(
+          create: (_) => HabitController(Provider.of<ApiService>(context, listen: false)),
+        ),
+        ChangeNotifierProvider<ProductivityController>(
+          create: (_) => ProductivityController(Provider.of<ApiService>(context, listen: false)),
+        ),
+        ChangeNotifierProvider<ActivityController>(
+          create: (_) => ActivityController(Provider.of<ApiService>(context, listen: false)),
+        ),
+        ChangeNotifierProvider<GroupsController>(
+          create: (_) => GroupsController(Provider.of<ApiService>(context, listen: false)),
+        ),
         // New AI/NLP services
         Provider<ConversationMemoryService>.value(value: conversationMemory),
         Provider<SmartCacheService>.value(value: smartCache),
@@ -280,6 +301,10 @@ class WaiqRootApp extends StatelessWidget {
         routes: {
           '/permissions': (context) => const PermissionsScreen(),
           '/': (context) => const WaiqApp(),
+          '/habits': (context) => const HabitsScreen(),
+          '/productivity': (context) => const ProductivityScreen(),
+          '/activity': (context) => const ActivityScreen(),
+          '/groups': (context) => const GroupsScreen(),
         },
       ),
     );

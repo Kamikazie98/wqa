@@ -1,3 +1,4 @@
+
 import '../models/user_models.dart';
 
 /// Daily program activity item
@@ -160,6 +161,69 @@ class DailyProgram {
   }
 }
 
+class SchedulingAnalysis {
+  final List<SchedulingRecommendation> recommendations;
+  final double overallProductivityScore;
+  final String scheduleHealthStatus;
+  final List<String> improvements;
+  final DateTime generatedAt;
+
+  SchedulingAnalysis({
+    required this.recommendations,
+    required this.overallProductivityScore,
+    required this.scheduleHealthStatus,
+    required this.improvements,
+    required this.generatedAt,
+  });
+
+  factory SchedulingAnalysis.fromJson(Map<String, dynamic> json) {
+    return SchedulingAnalysis(
+      recommendations: (json['recommendations'] as List<dynamic>?)
+              ?.map((r) =>
+                  SchedulingRecommendation.fromJson(r as Map<String, dynamic>))
+              .toList() ??
+          [],
+      overallProductivityScore:
+          (json['overall_productivity_score'] as num).toDouble(),
+      scheduleHealthStatus: json['schedule_health_status'] ?? '',
+      improvements: List<String>.from(json['improvements'] ?? []),
+      generatedAt: DateTime.parse(json['generated_at']),
+    );
+  }
+}
+
+class SchedulingRecommendation {
+  final String taskId;
+  final String taskTitle;
+  final DateTime recommendedTime;
+  final String reason;
+  final double score;
+  final List<String> factors;
+  final bool isOptimal;
+
+  SchedulingRecommendation({
+    required this.taskId,
+    required this.taskTitle,
+    required this.recommendedTime,
+    required this.reason,
+    required this.score,
+    required this.factors,
+    required this.isOptimal,
+  });
+
+  factory SchedulingRecommendation.fromJson(Map<String, dynamic> json) {
+    return SchedulingRecommendation(
+      taskId: json['task_id'] ?? '',
+      taskTitle: json['task_title'] ?? '',
+      recommendedTime: DateTime.parse(json['recommended_time']),
+      reason: json['reason'] ?? '',
+      score: (json['score'] as num).toDouble(),
+      factors: List<String>.from(json['factors'] ?? []),
+      isOptimal: json['is_optimal'] ?? false,
+    );
+  }
+}
+
 /// Daily program generation algorithm
 class DailyProgramGenerator {
   /// Generate daily program based on profile, goals, habits, and mood
@@ -186,7 +250,7 @@ class DailyProgramGenerator {
       title: 'صبح بیداری و آماده‌سازی',
       description: 'صبح بیدار شدن، آب‌تناول، تمدد و آماده‌سازی روز',
       startTime: _dateTime(date, wakeTime),
-      endTime: _dateTime(date, wakeTime).add(Duration(minutes: 30)),
+      endTime: _dateTime(date, wakeTime).add(const Duration(minutes: 30)),
       category: 'rest',
       priority: 'medium',
       energyRequired: 3.0,
@@ -196,7 +260,7 @@ class DailyProgramGenerator {
     ));
 
     // 3. Habit activities (morning habits)
-    var currentTime = _dateTime(date, wakeTime).add(Duration(minutes: 30));
+    var currentTime = _dateTime(date, wakeTime).add(const Duration(minutes: 30));
     final morningHabits = habits
         .where((h) => h.isActive && h.frequency == 'daily')
         .take(2)
@@ -208,7 +272,7 @@ class DailyProgramGenerator {
         title: habit.name,
         description: habit.description,
         startTime: currentTime,
-        endTime: currentTime.add(Duration(minutes: 20)),
+        endTime: currentTime.add(const Duration(minutes: 20)),
         category: 'habit',
         priority: 'high',
         relatedHabitId: habit.habitId,
@@ -217,7 +281,7 @@ class DailyProgramGenerator {
         isFlexible: true,
         order: 2 + morningHabits.indexOf(habit),
       ));
-      currentTime = currentTime.add(Duration(minutes: 20));
+      currentTime = currentTime.add(const Duration(minutes: 20));
     }
 
     // 4. Breakfast break (20 mins)
@@ -225,7 +289,7 @@ class DailyProgramGenerator {
       id: _generateId(),
       title: 'صبحانه',
       startTime: currentTime,
-      endTime: currentTime.add(Duration(minutes: 20)),
+      endTime: currentTime.add(const Duration(minutes: 20)),
       category: 'break',
       priority: 'medium',
       energyRequired: 2.0,
@@ -233,7 +297,7 @@ class DailyProgramGenerator {
       isFlexible: true,
       order: 5,
     ));
-    currentTime = currentTime.add(Duration(minutes: 20));
+    currentTime = currentTime.add(const Duration(minutes: 20));
 
     // 5. High-priority goals (focused work)
     final highPriorityGoals =
@@ -263,7 +327,7 @@ class DailyProgramGenerator {
         id: _generateId(),
         title: 'استراحت کوتاه',
         startTime: currentTime,
-        endTime: currentTime.add(Duration(minutes: 10)),
+        endTime: currentTime.add(const Duration(minutes: 10)),
         category: 'break',
         priority: 'medium',
         energyRequired: 1.0,
@@ -271,7 +335,7 @@ class DailyProgramGenerator {
         isFlexible: true,
         order: 0,
       ));
-      currentTime = currentTime.add(Duration(minutes: 10));
+      currentTime = currentTime.add(const Duration(minutes: 10));
     }
 
     // 6. Lunch break (30 mins)
@@ -279,7 +343,7 @@ class DailyProgramGenerator {
       id: _generateId(),
       title: 'ناهار',
       startTime: currentTime,
-      endTime: currentTime.add(Duration(minutes: 30)),
+      endTime: currentTime.add(const Duration(minutes: 30)),
       category: 'break',
       priority: 'medium',
       energyRequired: 2.0,
@@ -287,7 +351,7 @@ class DailyProgramGenerator {
       isFlexible: true,
       order: 8,
     ));
-    currentTime = currentTime.add(Duration(minutes: 30));
+    currentTime = currentTime.add(const Duration(minutes: 30));
 
     // 7. Afternoon goals (medium priority)
     final mediumPriorityGoals =
@@ -298,7 +362,7 @@ class DailyProgramGenerator {
         id: _generateId(),
         title: '${goal.title} - ادامه',
         startTime: currentTime,
-        endTime: currentTime.add(Duration(minutes: 45)),
+        endTime: currentTime.add(const Duration(minutes: 45)),
         category: 'focus',
         priority: 'medium',
         relatedGoalId: goal.goalId,
@@ -307,7 +371,7 @@ class DailyProgramGenerator {
         isFlexible: true,
         order: 9,
       ));
-      currentTime = currentTime.add(Duration(minutes: 45));
+      currentTime = currentTime.add(const Duration(minutes: 45));
     }
 
     // 8. Habit check-in (evening habits)
@@ -322,7 +386,7 @@ class DailyProgramGenerator {
         id: _generateId(),
         title: habit.name,
         startTime: currentTime,
-        endTime: currentTime.add(Duration(minutes: 20)),
+        endTime: currentTime.add(const Duration(minutes: 20)),
         category: 'habit',
         priority: 'medium',
         relatedHabitId: habit.habitId,
@@ -331,7 +395,7 @@ class DailyProgramGenerator {
         isFlexible: true,
         order: 10 + eveningHabits.indexOf(habit),
       ));
-      currentTime = currentTime.add(Duration(minutes: 20));
+      currentTime = currentTime.add(const Duration(minutes: 20));
     }
 
     // 9. Evening routine & reflection (20 mins)
@@ -340,7 +404,7 @@ class DailyProgramGenerator {
       title: 'بازنگری روز و برنامه‌ریزی فردا',
       description: 'تأمل در دستاورد‌های روز و برنامه‌ریزی روز بعد',
       startTime: currentTime,
-      endTime: currentTime.add(Duration(minutes: 20)),
+      endTime: currentTime.add(const Duration(minutes: 20)),
       category: 'rest',
       priority: 'medium',
       energyRequired: 2.0,
@@ -348,7 +412,7 @@ class DailyProgramGenerator {
       isFlexible: true,
       order: 12,
     ));
-    currentTime = currentTime.add(Duration(minutes: 20));
+    currentTime = currentTime.add(const Duration(minutes: 20));
 
     // 10. Wind-down before sleep (20 mins)
     activities.add(ProgramActivity(
@@ -356,7 +420,7 @@ class DailyProgramGenerator {
       title: 'آماده‌سازی برای خواب',
       description: 'خاموش کردن دستگاه‌ها، تنظیم محیط خواب',
       startTime: currentTime,
-      endTime: currentTime.add(Duration(minutes: 20)),
+      endTime: currentTime.add(const Duration(minutes: 20)),
       category: 'rest',
       priority: 'medium',
       energyRequired: 1.0,

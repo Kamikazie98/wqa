@@ -1,3 +1,4 @@
+
 import 'dart:math';
 
 /// Goal status enum
@@ -208,7 +209,7 @@ class UserGoal {
   final String priority; // low, medium, high, urgent
   final double progressPercentage;
   final GoalStatus status;
-  final List<String>? milestones;
+  final List<GoalMilestone>? milestones;
   final DateTime createdAt;
   final DateTime? completedAt;
 
@@ -240,9 +241,9 @@ class UserGoal {
           ? (json['progress_percentage'] as num).toDouble()
           : 0.0,
       status: GoalStatusExt.fromJson(json['status'] ?? 'active'),
-      milestones: json['milestones'] != null
-          ? List<String>.from(json['milestones'])
-          : null,
+      milestones: (json['milestones'] as List<dynamic>?)
+          ?.map((m) => GoalMilestone.fromJson(m as Map<String, dynamic>))
+          .toList(),
       createdAt: DateTime.parse(json['created_at']),
       completedAt: json['completed_at'] != null
           ? DateTime.parse(json['completed_at'])
@@ -261,7 +262,7 @@ class UserGoal {
       'priority': priority,
       'progress_percentage': progressPercentage,
       'status': status.toJson(),
-      'milestones': milestones,
+      'milestones': milestones?.map((m) => m.toJson()).toList(),
       'created_at': createdAt.toIso8601String(),
       'completed_at': completedAt?.toIso8601String(),
     };
@@ -277,7 +278,7 @@ class UserGoal {
     String? priority,
     double? progressPercentage,
     GoalStatus? status,
-    List<String>? milestones,
+    List<GoalMilestone>? milestones,
     DateTime? createdAt,
     DateTime? completedAt,
   }) {
@@ -300,6 +301,18 @@ class UserGoal {
   bool get isCompleted => status == GoalStatus.completed;
   bool get isActive => status == GoalStatus.active;
   bool get isOverdue => DateTime.now().isAfter(deadline) && !isCompleted;
+}
+
+class Goal {
+  final String id;
+  final String title;
+  final String description;
+
+  Goal({
+    required this.id,
+    required this.title,
+    required this.description,
+  });
 }
 
 /// Mood snapshot model
@@ -706,7 +719,7 @@ class GoalMilestone {
   final String goalId;
   final String title;
   final String? description;
-  final DateTime targetDate;
+  final DateTime? targetDate;
   final String status; // pending, in_progress, completed
   final double progressContribution; // 0-100, percentage contribution to goal
   final DateTime? completedAt;
@@ -717,7 +730,7 @@ class GoalMilestone {
     required this.goalId,
     required this.title,
     this.description,
-    required this.targetDate,
+    this.targetDate,
     required this.status,
     required this.progressContribution,
     this.completedAt,
@@ -730,7 +743,9 @@ class GoalMilestone {
       goalId: json['goal_id'] ?? '',
       title: json['title'] ?? '',
       description: json['description'],
-      targetDate: DateTime.parse(json['target_date']),
+      targetDate: json['target_date'] != null
+          ? DateTime.parse(json['target_date'])
+          : null,
       status: json['status'] ?? 'pending',
       progressContribution: (json['progress_contribution'] as num).toDouble(),
       completedAt: json['completed_at'] != null
@@ -746,7 +761,7 @@ class GoalMilestone {
       'goal_id': goalId,
       'title': title,
       'description': description,
-      'target_date': targetDate.toIso8601String(),
+      'target_date': targetDate?.toIso8601String(),
       'status': status,
       'progress_contribution': progressContribution,
       'completed_at': completedAt?.toIso8601String(),

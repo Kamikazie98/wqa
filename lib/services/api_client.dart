@@ -1,3 +1,4 @@
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -5,6 +6,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../models/chat_models.dart';
+import '../models/daily_program_models.dart';
+import '../models/user_models.dart';
 import 'exceptions.dart';
 
 typedef TokenProvider = String? Function();
@@ -306,6 +309,196 @@ class ApiClient {
     return prompts
         .map((item) => Map<String, String>.from(item as Map))
         .toList();
+  }
+
+  Future<UserProfile> setupUserProfile(UserProfile userProfile) async {
+    final response = await postJson('/user/profile/setup', body: userProfile.toJson());
+    return UserProfile.fromJson(response);
+  }
+
+  Future<UserProfile> getUserProfile() async {
+    final response = await getJson('/user/profile');
+    return UserProfile.fromJson(response);
+  }
+
+  Future<UserProfile> updateUserProfile(UserProfile userProfile) async {
+    final response = await putJson('/user/profile/update', body: userProfile.toJson());
+    return UserProfile.fromJson(response);
+  }
+
+  Future<UserGoal> createGoal(UserGoal goal) async {
+    final response = await postJson('/user/goals', body: goal.toJson());
+    return UserGoal.fromJson(response);
+  }
+
+  Future<List<UserGoal>> getGoals() async {
+    final response = await getJson('/user/goals');
+    return (response['goals'] as List<dynamic>)
+        .map((g) => UserGoal.fromJson(g as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<UserGoal> updateGoal(String goalId, Map<String, dynamic> data) async {
+    final response = await putJson('/user/goals/$goalId', body: data);
+    return UserGoal.fromJson(response);
+  }
+
+  Future<void> deleteGoal(String goalId) async {
+    await deleteJson('/user/goals/$goalId');
+  }
+
+  Future<void> completeGoal(String goalId) async {
+    await postJson('/user/goals/$goalId/complete');
+  }
+
+  Future<void> linkTaskToGoal(String goalId, String taskId) async {
+    await postJson('/user/goals/$goalId/link-task', body: {'task_id': taskId});
+  }
+
+  Future<void> unlinkTaskFromGoal(String goalId, String taskId) async {
+    await postJson('/user/goals/$goalId/unlink-task', body: {'task_id': taskId});
+  }
+
+  Future<GoalMilestone> addMilestone(String goalId, GoalMilestone milestone) async {
+    final response = await postJson('/user/goals/$goalId/milestones', body: milestone.toJson());
+    return GoalMilestone.fromJson(response);
+  }
+
+  Future<GoalMilestone> updateMilestone(String goalId, String milestoneId, Map<String, dynamic> data) async {
+    final response = await putJson('/user/goals/$goalId/milestones/$milestoneId', body: data);
+    return GoalMilestone.fromJson(response);
+  }
+
+  Future<List<Map<String, dynamic>>> getGoalProgressHistory(String goalId) async {
+    final response = await getJson('/user/goals/$goalId/progress-history');
+    return List<Map<String, dynamic>>.from(response['history']);
+  }
+
+  Future<Habit> createHabit(Habit habit) async {
+    final response = await postJson('/habits', body: habit.toJson());
+    return Habit.fromJson(response);
+  }
+
+  Future<List<Habit>> getHabits() async {
+    final response = await getJson('/habits');
+    return (response['habits'] as List<dynamic>)
+        .map((h) => Habit.fromJson(h as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<Habit> getHabit(String habitId) async {
+    final response = await getJson('/habits/$habitId');
+    return Habit.fromJson(response);
+  }
+
+  Future<void> logHabitCompletion(String habitId, Map<String, dynamic> data) async {
+    await postJson('/habits/$habitId/log', body: data);
+  }
+
+  Future<Habit> updateHabit(String habitId, Map<String, dynamic> data) async {
+    final response = await putJson('/habits/$habitId', body: data);
+    return Habit.fromJson(response);
+  }
+
+  Future<void> deleteHabit(String habitId) async {
+    await deleteJson('/habits/$habitId');
+  }
+
+  Future<MoodSnapshot> recordMood(MoodSnapshot snapshot) async {
+    final response = await postJson('/user/mood/snapshot', body: snapshot.toJson());
+    return MoodSnapshot.fromJson(response);
+  }
+
+  Future<List<MoodSnapshot>> getMoodHistory() async {
+    final response = await getJson('/user/mood/history');
+    return (response['snapshots'] as List<dynamic>)
+        .map((s) => MoodSnapshot.fromJson(s as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<DailyProgram> generateDailyProgram(Map<String, dynamic> data) async {
+    final response = await postJson('/user/program/generate', body: data);
+    return DailyProgram.fromJson(response);
+  }
+
+  Future<DailyProgram> getProgramForDate(String date) async {
+    final response = await getJson('/user/program/$date');
+    return DailyProgram.fromJson(response);
+  }
+
+  Future<DailyProgram> getTodayProgram() async {
+    final response = await getJson('/user/program/today');
+    return DailyProgram.fromJson(response);
+  }
+
+  Future<void> completeActivity(String activityId, bool completed) async {
+    await postJson('/user/program/activity/$activityId/complete', body: {'completed': completed});
+  }
+
+  Future<void> rescheduleActivity(String activityId, DateTime newTime) async {
+    await putJson('/user/program/activity/$activityId/reschedule', body: {'new_time': newTime.toIso8601String()});
+  }
+
+  Future<Map<String, dynamic>> addCustomActivity(ProgramActivity activity) async {
+    return await postJson('/user/program/activity/add', body: activity.toJson());
+  }
+
+  Future<void> deleteActivity(String activityId) async {
+    await deleteJson('/user/program/activity/$activityId');
+  }
+
+  Future<SchedulingAnalysis> analyzeScheduling() async {
+    final response = await postJson('/user/scheduling/analyze');
+    return SchedulingAnalysis.fromJson(response);
+  }
+
+  Future<List<SchedulingRecommendation>> getSchedulingRecommendations() async {
+    final response = await getJson('/user/scheduling/recommendations');
+    return (response['recommendations'] as List<dynamic>)
+        .map((r) => SchedulingRecommendation.fromJson(r as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<UserTask> createTask(UserTask task) async {
+    final response = await postJson('/tasks', body: task.toJson());
+    return UserTask.fromJson(response);
+  }
+
+  Future<List<UserTask>> getTasks({String? status, String? category}) async {
+    final query = <String, String>{};
+    if (status != null) {
+      query['status'] = status;
+    }
+    if (category != null) {
+      query['category'] = category;
+    }
+    final response = await getJson('/tasks', query: query);
+    return (response['tasks'] as List<dynamic>)
+        .map((t) => UserTask.fromJson(t as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<UserTask> getTask(String taskId) async {
+    final response = await getJson('/tasks/$taskId');
+    return UserTask.fromJson(response);
+  }
+
+  Future<UserTask> updateTask(String taskId, Map<String, dynamic> data) async {
+    final response = await putJson('/tasks/$taskId', body: data);
+    return UserTask.fromJson(response);
+  }
+
+  Future<void> deleteTask(String taskId) async {
+    await deleteJson('/tasks/$taskId');
+  }
+
+  Future<void> completeTask(String taskId) async {
+    await postJson('/tasks/$taskId/complete');
+  }
+
+  Future<UserTask> createRecurringTask(Map<String, dynamic> data) async {
+    final response = await postJson('/tasks/recurring', body: data);
+    return UserTask.fromJson(response);
   }
 
   void close() {

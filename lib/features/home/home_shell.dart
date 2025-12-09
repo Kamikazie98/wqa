@@ -21,6 +21,10 @@ import '../search/search_history_page.dart';
 import '../notifications/notification_dashboard_page.dart';
 import '../notifications/important_notification_banner.dart';
 import '../../screens/automation_screen.dart';
+import '../../screens/habits_screen.dart';
+import '../../screens/productivity_screen.dart';
+import '../../screens/activity_screen.dart';
+import '../../screens/groups_screen.dart';
 import 'app_drawer.dart';
 
 class HomeShell extends StatefulWidget {
@@ -46,6 +50,10 @@ class _HomeShellState extends State<HomeShell> {
     MessageAnalysisPage(),
     SearchHistoryPage(),
     NotificationDashboardPage(),
+    HabitsScreen(),
+    ProductivityScreen(),
+    ActivityScreen(),
+    GroupsScreen(),
     ProfileManagementPage(),
     SettingsPage(),
   ];
@@ -122,6 +130,30 @@ class _HomeShellState extends State<HomeShell> {
       selectedIcon: Icon(Icons.notifications),
       label: 'اعلان‌ها',
       tooltip: 'تاریخچه اعلان‌ها',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.repeat_on_outlined),
+      selectedIcon: Icon(Icons.repeat_on),
+      label: 'عادت‌ها',
+      tooltip: 'پیگیری عادت‌ها',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.analytics_outlined),
+      selectedIcon: Icon(Icons.analytics),
+      label: 'بهره‌وری',
+      tooltip: 'تحلیل بهره‌وری',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.local_activity_outlined),
+      selectedIcon: Icon(Icons.local_activity),
+      label: 'فعالیت‌ها',
+      tooltip: 'فعالیت‌های اخیر',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.group_outlined),
+      selectedIcon: Icon(Icons.group),
+      label: 'گروه‌ها',
+      tooltip: 'گروه‌های دوستان و خانواده',
     ),
     NavigationDestination(
       icon: Icon(Icons.person_outline),
