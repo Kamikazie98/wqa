@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'app.dart';
 import 'controllers/auth_controller.dart';
@@ -54,7 +56,6 @@ Future<void> main() async {
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // اینا می‌تونن مستقل از دسترسی‌ها آماده بشن
   await WorkmanagerService.initialize();
   await WorkmanagerService.scheduleDailyBriefing();
   await WorkmanagerService.scheduleNotificationTriage();
@@ -267,7 +268,7 @@ class WaiqRootApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           colorSchemeSeed:
-              const Color(0xFF6750A4), // می‌تونی رنگ برند خودت رو بذاری
+              const Color(0xFF6750A4), 
           brightness: Brightness.light,
           scaffoldBackgroundColor: const Color(0xFFF5F5F7),
           appBarTheme: const AppBarTheme(
@@ -289,7 +290,7 @@ class WaiqRootApp extends StatelessWidget {
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBody(
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(999),
               ),
             ),
@@ -300,6 +301,16 @@ class WaiqRootApp extends StatelessWidget {
             ),
           ),
         ),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en'), // English
+          Locale('fa'), // Persian
+        ],
         // فلوی حرفه‌ای: اول صفحه Permissionها، بعد خود اپ
         initialRoute: '/permissions',
         routes: {

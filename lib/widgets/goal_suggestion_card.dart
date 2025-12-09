@@ -1,6 +1,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 import '../models/user_models.dart';
 import '../services/local_nlp_processor.dart';
 
@@ -11,6 +13,7 @@ class GoalSuggestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final nlpProcessor = Provider.of<LocalNLPProcessor>(context, listen: false);
 
     return Card(
@@ -34,14 +37,14 @@ class GoalSuggestionCard extends StatelessWidget {
                   onPressed: () {
                     nlpProcessor.recordGoalFeedback(suggestion.id, false);
                   },
-                  child: const Text('Dislike'),
+                  child: Text(l10n.dislike),
                 ),
                 const SizedBox(width: 8.0),
                 ElevatedButton(
                   onPressed: () {
                     nlpProcessor.recordGoalFeedback(suggestion.id, true);
                   },
-                  child: const Text('Like'),
+                  child: Text(l10n.like),
                 ),
               ],
             ),

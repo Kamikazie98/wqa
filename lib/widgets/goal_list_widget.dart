@@ -1,9 +1,12 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../models/user_models.dart';
 import '../services/service_providers.dart';
+import 'empty_state.dart';
 
 /// Goal List Widget with Real-time Updates
 class GoalListWidget extends ConsumerWidget {
@@ -16,8 +19,8 @@ class GoalListWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final goalsAsync = ref.watch(goalsStreamProvider);
-    final progressAsync = ref.watch(goalProgressStreamProvider);
 
     return goalsAsync.when(
       data: (goals) {
@@ -30,18 +33,10 @@ class GoalListWidget extends ConsumerWidget {
         }
 
         if (filteredGoals.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.flag, size: 64, color: Colors.grey.shade300),
-                const SizedBox(height: 16),
-                Text(
-                  'هیچ هدف یافت نشد',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ],
-            ),
+          return EmptyState(
+            icon: Icons.flag,
+            title: l10n.noGoalsFound,
+            message: '',
           );
         }
 
@@ -54,7 +49,7 @@ class GoalListWidget extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('خطا: $error')),
+      error: (error, stack) => Center(child: Text(l10n.error(error.toString()))),
     );
   }
 }
@@ -70,7 +65,7 @@ class GoalListItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final progressAsync = ref.watch(goalProgressStreamProvider);
+    final l10n = AppLocalizations.of(context)!;
     final goalService = ref.watch(goalManagementServiceProvider);
     final milestonesAsync = ref.watch(
       FutureProvider((fRef) => goalService.getMilestones(goal.goalId)),
@@ -88,11 +83,11 @@ class GoalListItem extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'پیشرفت: ${goal.progressPercentage.toStringAsFixed(1)}%',
+                  l10n.progress(goal.progressPercentage.toStringAsFixed(1)),
                   style: const TextStyle(fontSize: 12),
                 ),
                 Text(
-                  'موعد: ${DateFormat('yyyy/MM/dd', 'fa_IR').format(goal.deadline)}',
+                  l10n.deadline(DateFormat('yyyy/MM/dd', l10n.localeName).format(goal.deadline)),
                   style: const TextStyle(fontSize: 12),
                 ),
               ],
@@ -115,7 +110,7 @@ class GoalListItem extends ConsumerWidget {
               children: [
                 if (goal.description != null) ...[
                   Text(
-                    'توضیح:',
+                    l10n.description,
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(height: 8),
@@ -123,14 +118,14 @@ class GoalListItem extends ConsumerWidget {
                   const SizedBox(height: 16),
                 ],
                 Text(
-                  'مراحل:',
+                  l10n.milestones,
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: 8),
                 milestonesAsync.when(
                   data: (milestones) {
                     if (milestones.isEmpty) {
-                      return const Text('بدون مرحله');
+                      return Text(l10n.noMilestones);
                     }
                     return ListView.builder(
                       shrinkWrap: true,
@@ -149,7 +144,7 @@ class GoalListItem extends ConsumerWidget {
                           },
                           title: Text(milestone.title),
                           subtitle: Text(
-                            'موعد: ${DateFormat('yyyy/MM/dd', 'fa_IR').format(milestone.targetDate)}',
+                            l10n.deadline(DateFormat('yyyy/MM/dd', l10n.localeName).format(milestone.targetDate)),
                           ),
                           contentPadding: EdgeInsets.zero,
                         );
@@ -157,7 +152,7 @@ class GoalListItem extends ConsumerWidget {
                     );
                   },
                   loading: () => const CircularProgressIndicator(),
-                  error: (error, stack) => Text('خطا: $error'),
+                  error: (error, stack) => Text(l10n.error(error.toString())),
                 ),
               ],
             ),
@@ -174,6 +169,7 @@ class GoalStatsWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final statsAsync = ref.watch(
       FutureProvider((fRef) {
         final goalService = ref.watch(goalManagementServiceProvider);
@@ -184,7 +180,7 @@ class GoalStatsWidget extends ConsumerWidget {
     return statsAsync.when(
       data: (stats) {
         if (stats == null) {
-          return const Center(child: Text('اطلاعات موجود نیست'));
+          return Center(child: Text(l10n.noDataAvailable));
         }
 
         return Card(
@@ -194,7 +190,7 @@ class GoalStatsWidget extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'آمار اهداف',
+                  l10n.goalStats,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
@@ -206,22 +202,22 @@ class GoalStatsWidget extends ConsumerWidget {
                   crossAxisSpacing: 16,
                   children: [
                     _GoalStatCard(
-                      label: 'کل اهداف',
+                      label: l10n.totalGoals,
                       value: stats.totalGoals,
                       color: Colors.blue,
                     ),
                     _GoalStatCard(
-                      label: 'فعال',
+                      label: l10n.active,
                       value: stats.activeGoals,
                       color: Colors.green,
                     ),
                     _GoalStatCard(
-                      label: 'تکمیل شده',
+                      label: l10n.completed,
                       value: stats.completedGoals,
                       color: Colors.purple,
                     ),
                     _GoalStatCard(
-                      label: 'موقع مقررد',
+                      label: l10n.onTrack,
                       value: stats.onTrackGoals,
                       color: Colors.orange,
                     ),
@@ -232,7 +228,7 @@ class GoalStatsWidget extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'میانگین پیشرفت:',
+                      l10n.averageProgress,
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     Text(
@@ -250,7 +246,7 @@ class GoalStatsWidget extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'در خطر:',
+                      l10n.atRisk,
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     Text(
@@ -269,7 +265,7 @@ class GoalStatsWidget extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('خطا: $error')),
+      error: (error, stack) => Center(child: Text(l10n.error(error.toString()))),
     );
   }
 }

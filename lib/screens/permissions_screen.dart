@@ -1,8 +1,10 @@
+
 import 'dart:io';
 
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../services/native_bridge.dart';
 
 class PermissionsScreen extends StatefulWidget {
@@ -31,6 +33,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
   }
 
   Widget _buildRestrictedSettingsHint() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -40,9 +43,9 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.orange.withOpacity(0.4)),
       ),
-      child: const Text(
-        'اگر سوییچ اعلان خاکستری است: Settings > Apps > (waiq) > ⋮ > Allow restricted settings را بزن، قفل صفحه را باز کن و تأیید کن. سپس به Settings > Notifications > Device & app notifications برگرد و سوییچ را روشن کن. در HyperOS/MIUI اگر هنوز خاکستری بود، Battery را روی No restrictions بگذار و MIUI/HyperOS optimization را یک بار خاموش/روشن کن.',
-        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      child: Text(
+        l10n.restrictedSettingsHint,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -55,7 +58,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     micGranted = await Permission.microphone.isGranted;
     calendarGranted = await Permission.calendar.isGranted;
 
-    // این دو تا پرمیشن سیستمی هستن، دیالوگ ندارن
+    // These two are system permissions, they don't have a dialog
     notifListenerGranted = await NativeBridge.isNotificationListenerEnabled();
     batteryOptimizeIgnored =
         await Permission.ignoreBatteryOptimizations.isGranted;
@@ -93,6 +96,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     bool isSystemPermission = false,
     IconData? icon,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Padding(
@@ -126,7 +130,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
               : ElevatedButton(
                   onPressed: onPressed,
                   child: Text(
-                      isSystemPermission ? "باز کردن تنظیمات" : "فعال‌سازی"),
+                      isSystemPermission ? l10n.openSettings : l10n.activate),
                 ),
         ),
       ),
@@ -136,13 +140,14 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
   @override
   Widget build(BuildContext context) {
     final allRequiredGranted = notifGranted && locGranted;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
             if (showRestrictedHint) _buildRestrictedSettingsHint(),
-            // Header حرفه‌ای
+            // Professional Header
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Row(
@@ -152,18 +157,18 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
-                          "مجوزهای Waiq",
-                          style: TextStyle(
+                          l10n.permissionsTitle,
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          "برای کارکرد هوشمند، چند دسترسی لازم داریم. هر مورد را می‌توانی جداگانه مدیریت کنی.",
-                          style: TextStyle(fontSize: 13),
+                          l10n.permissionsDescription,
+                          style: const TextStyle(fontSize: 13),
                         ),
                       ],
                     ),
@@ -180,7 +185,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                   children: [
                     // *** Runtime permissions ***
                     Text(
-                      "مجوزهای اصلی (درون‌اپی)",
+                      l10n.mainPermissions,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -189,9 +194,9 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                     ),
                     const SizedBox(height: 8),
                     _buildTile(
-                      title: "نوتیفیکیشن",
+                      title: l10n.notification,
                       description:
-                          "برای ارسال اعلان‌های هوشمند و بروزرسانی رویدادها.",
+                          l10n.notificationDescription,
                       granted: notifGranted,
                       icon: Icons.notifications_active,
                       onPressed: () async {
@@ -200,21 +205,21 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                       },
                     ),
                     _buildTile(
-                      title: "موقعیت مکانی",
+                      title: l10n.location,
                       description:
-                          "برای تشخیص حالت‌ها، اتوماسیون مکانی و سرویس سنس.",
+                          l10n.locationDescription,
                       granted: locGranted,
                       icon: Icons.location_on,
                       onPressed: () async {
                         await Permission.locationWhenInUse.request();
-                        // درخواست پس‌زمینه هم (اگه سیستم اجازه بده)
+                        // Also request background permission (if the system allows)
                         await Permission.locationAlways.request();
                         await _refreshStatus();
                       },
                     ),
                     _buildTile(
-                      title: "تماس‌ها (Phone)",
-                      description: "برای اجرای اتوماسیون‌های مربوط به تماس.",
+                      title: l10n.phone,
+                      description: l10n.phoneDescription,
                       granted: phoneGranted,
                       icon: Icons.phone,
                       onPressed: () async {
@@ -223,8 +228,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                       },
                     ),
                     _buildTile(
-                      title: "پیامک (SMS)",
-                      description: "برای ارسال/خواندن SMS در اتوماسیون‌ها.",
+                      title: l10n.sms,
+                      description: l10n.smsDescription,
                       granted: smsGranted,
                       icon: Icons.sms,
                       onPressed: () async {
@@ -233,8 +238,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                       },
                     ),
                     _buildTile(
-                      title: "میکروفون",
-                      description: "برای دستیار صوتی و تعامل‌های مبتنی بر صدا.",
+                      title: l10n.microphone,
+                      description: l10n.microphoneDescription,
                       granted: micGranted,
                       icon: Icons.mic,
                       onPressed: () async {
@@ -243,8 +248,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                       },
                     ),
                     _buildTile(
-                      title: "تقویم",
-                      description: "برای خواندن و مدیریت رویدادهای تقویم.",
+                      title: l10n.calendar,
+                      description: l10n.calendarDescription,
                       granted: calendarGranted,
                       icon: Icons.event,
                       onPressed: () async {
@@ -255,7 +260,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
 
                     const SizedBox(height: 24),
                     Text(
-                      "تنظیمات سیستمی (از تنظیمات اندروید)",
+                      l10n.systemSettings,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -265,11 +270,11 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                     const SizedBox(height: 8),
 
                     _buildTile(
-                      title: "Usage Access (خواندن اپ‌های در حال استفاده)",
+                      title: l10n.usageAccess,
                       description:
-                          "برای فهمیدن اینکه الان کدام اپ در foreground است. بعد از باز شدن صفحه، Waiq را پیدا کن و Allow را فعال کن.",
+                          l10n.usageAccessDescription,
                       granted:
-                          false, // اینجا مستقیماً قابل‌چک‌کردن نیست، کاربر باید خودش فعال کند
+                          false, // This cannot be checked directly, the user must enable it themselves
                       icon: Icons.apps,
                       isSystemPermission: true,
                       onPressed: () async {
@@ -277,9 +282,9 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                       },
                     ),
                     _buildTile(
-                      title: "Notification Listener",
+                      title: l10n.notificationListener,
                       description:
-                          "این اجازه برای دریافت و تحلیل اطلاعات نوتیفیکیشن‌های دستگاه لازم است. برای فعال‌کردن: ۱) به Settings > Apps > (waiq) > Permissions > Allow restricted settings برو، ۲) سپس به Settings > Notifications > Device & app notifications برو و گزینه مربوطه را فعال کن. اگر روی گوشی‌های HyperOS/MIUI هستی، مطمئن شو Battery کنترل‌کننده No restrictions باشد و MIUI/HyperOS بهینه‌سازی غیرفعال است.",
+                          l10n.notificationListenerDescription,
                       granted: notifListenerGranted,
                       icon: Icons.notifications,
                       isSystemPermission: true,
@@ -289,9 +294,9 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                       },
                     ),
                     _buildTile(
-                      title: "Battery Optimization",
+                      title: l10n.batteryOptimization,
                       description:
-                          "برای جلوگیری از بستن خودکار Waiq در پس‌زمینه. در صفحه باز شده، اپ را روی \"No restrictions\" بگذار.",
+                          l10n.batteryOptimizationDescription,
                       granted: batteryOptimizeIgnored,
                       icon: Icons.battery_saver,
                       isSystemPermission: true,
@@ -305,19 +310,19 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                     ElevatedButton.icon(
                       onPressed: allRequiredGranted
                           ? () {
-                              // وقتی پرمیشن‌های ضروری اوکی شد، برو به صفحه اصلی
+                              // When the necessary permissions are OK, go to the main page
                               Navigator.pushReplacementNamed(context, '/');
                             }
                           : null,
                       icon: const Icon(Icons.arrow_forward),
-                      label: const Text("ادامه به برنامه"),
+                      label: Text(l10n.continueToApp),
                     ),
                     const SizedBox(height: 8),
                     if (!allRequiredGranted)
-                      const Text(
-                        "برای ادامه حداقل نوتیفیکیشن و موقعیت مکانی باید فعال باشند.",
+                      Text(
+                        l10n.permissionsRequiredMessage,
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12),
+                        style: const TextStyle(fontSize: 12),
                       ),
                   ],
                 ),

@@ -1,11 +1,12 @@
+
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart' hide Consumer;
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'constants/brand.dart';
 import 'controllers/auth_controller.dart';
@@ -23,58 +24,45 @@ class WaiqApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
-      child: Directionality(
-        textDirection: TextDirection.rtl,
-        child: MaterialApp(
-          title: Brand.name,
-          debugShowCheckedModeBanner: false,
-          locale: const Locale('fa'),
-          supportedLocales: const [
-            Locale('fa'),
-            Locale('en'),
-          ],
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-          ],
-          theme: _buildTheme(Brightness.dark),
-          darkTheme: _buildTheme(Brightness.dark),
-          themeMode: ThemeMode.dark,
-          builder: (context, child) {
-            return Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF05060A),
-                    Color(0xFF0A0F1E),
-                    Color(0xFF11172A),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+      child: MaterialApp(
+        onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+        debugShowCheckedModeBanner: false,
+        theme: _buildTheme(Brightness.dark),
+        darkTheme: _buildTheme(Brightness.dark),
+        themeMode: ThemeMode.dark,
+        builder: (context, child) {
+          return Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF05060A),
+                  Color(0xFF0A0F1E),
+                  Color(0xFF11172A),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                        child: Container(color: Colors.white.withOpacity(0.02)),
-                      ),
+            ),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                      child: Container(color: Colors.white.withOpacity(0.02)),
                     ),
                   ),
-                  Positioned.fill(child: child ?? const SizedBox.shrink()),
-                ],
-              ),
-            );
-          },
-          initialRoute: '/',
-          routes: {
-            '/': (context) => const _AppEntryPoint(),
-            '/permissions': (context) => const PermissionsScreen(),
-          },
-        ),
+                ),
+                Positioned.fill(child: child ?? const SizedBox.shrink()),
+              ],
+            ),
+          );
+        },
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const _AppEntryPoint(),
+          '/permissions': (context) => const PermissionsScreen(),
+        },
       ),
     );
   }
@@ -263,7 +251,7 @@ class _AppEntryPointState extends State<_AppEntryPoint> {
         });
       }
     } catch (_) {
-      // اگر چک نسخه خطا داد، اپ را بلاک نکن.
+      // If version check fails, do not block the app.
     }
   }
 }
@@ -297,7 +285,7 @@ class _LoadingView extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'در حال بارگذاری...',
+                AppLocalizations.of(context)!.loading,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Colors.white70,
                     ),
@@ -318,6 +306,7 @@ class _UpdateRequiredView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: Center(
         child: Card(
@@ -330,16 +319,16 @@ class _UpdateRequiredView extends StatelessWidget {
               children: [
                 const Icon(Icons.system_update, size: 56),
                 const SizedBox(height: 12),
-                const Text(
-                  'به‌روزرسانی لازم است',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                Text(
+                  l10n.updateRequired,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   latestVersion == null
-                      ? 'برای ادامه لطفاً اپلیکیشن را به آخرین نسخه به‌روز کنید.'
-                      : 'نسخه $latestVersion منتشر شده است. برای ادامه لطفاً اپلیکیشن را به‌روز کنید.',
+                      ? l10n.updateMessageGeneric
+                      : l10n.updateMessage(latestVersion!),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -347,10 +336,10 @@ class _UpdateRequiredView extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () => UrlLauncherService.openUrl(downloadUrl!),
                     icon: const Icon(Icons.download),
-                    label: const Text('دانلود به‌روزرسانی'),
+                    label: Text(l10n.downloadUpdate),
                   )
                 else
-                  const Text('لینک دانلود در دسترس نیست.'),
+                  Text(l10n.downloadLinkUnavailable),
               ],
             ),
           ),

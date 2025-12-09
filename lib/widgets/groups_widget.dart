@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../controllers/groups_controller.dart';
 
@@ -9,12 +10,13 @@ class GroupsWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final groupsAsync = ref.watch(groupsControllerProvider);
 
     return groupsAsync.when(
       data: (groups) {
         if (groups.isEmpty) {
-          return const Center(child: Text('No groups yet.'));
+          return Center(child: Text(l10n.noGroupsYet));
         }
         return ListView.builder(
           itemCount: groups.length,
@@ -32,7 +34,7 @@ class GroupsWidget extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Error: $error')),
+      error: (error, stack) => Center(child: Text(l10n.error(error.toString()))),
     );
   }
 }
