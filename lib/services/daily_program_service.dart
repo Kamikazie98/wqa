@@ -40,39 +40,71 @@ class DailyProgramService extends ChangeNotifier {
       notifyListeners();
 
       date ??= DateTime.now();
-
-      // Generate program using algorithm
-      final program = DailyProgramGenerator.generateProgram(
-        userId: profile.userId,
-        profile: profile,
-        goals: goals,
-        habits: habits,
-        currentMood: currentMood,
-        currentEnergy: currentEnergy,
-        date: date,
-      );
-
-      // Cache the program
       final dateKey = '${date.year}-${date.month}-${date.day}';
-      _programCache[dateKey] = program;
 
-      // If it's today, update todayProgram
-      final now = DateTime.now();
-      if (date.year == now.year &&
-          date.month == now.month &&
-          date.day == now.day) {
-        _todayProgram = program;
+      // 1. Attempt to generate program via API
+      try {
+        final program = await apiClient.generateDailyProgram(
+          profile: profile,
+          goals: goals,
+          habits: habits,
+          currentMood: currentMood,
+          currentEnergy: currentEnergy,
+          date: date,
+        );
+
+        // Cache and set the program
+        _programCache[dateKey] = program;
+        if (date.year == DateTime.now().year &&
+            date.month == DateTime.now().month &&
+            date.day == DateTime.now().day) {
+          _todayProgram = program;
+        }
+
+        _isLoading = false;
+        notifyListeners();
+        return program;
+      } catch (e) {
+        // If API fails, fallback to local generation
+        print('API program generation failed: $e. Falling back to local.');
+        return _generateLocalProgram(profile, goals, habits, currentMood, currentEnergy, date);
       }
-
-      _isLoading = false;
-      notifyListeners();
-      return program;
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
       notifyListeners();
       rethrow;
     }
+  }
+
+  /// Fallback to generate program locally
+  Future<DailyProgram> _generateLocalProgram(
+    UserProfile profile,
+    List<UserGoal> goals,
+    List<Habit> habits,
+    double currentMood,
+    double currentEnergy,
+    DateTime date,
+  ) {
+    final program = DailyProgramGenerator.generateProgram(
+      userId: profile.userId,
+      profile: profile,
+      goals: goals,
+      habits: habits,
+      currentMood: currentMood,
+      currentEnergy: currentEnergy,
+      date: date,
+    );
+
+    final dateKey = '${date.year}-${date.month}-${date.day}';
+    _programCache[dateKey] = program;
+    if (date.year == DateTime.now().year &&
+        date.month == DateTime.now().month &&
+        date.day == DateTime.now().day) {
+      _todayProgram = program;
+    }
+
+    return Future.value(program);
   }
 
   /// Get program for specific date
@@ -114,6 +146,44 @@ class DailyProgramService extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return null;
+    }
+  }
+
+  /// Edit activity in today's program
+  Future<void> editActivity({
+    required String activityId,
+    required String title,
+    String? description,
+  }) async {
+    try {
+      await apiClient.put(
+        '/user/program/activity/$activityId',
+        body: {
+          'title': title,
+          'description': description,
+        },
+        authRequired: true,
+      );
+
+      // Update local activity
+      final activity = _todayProgram?.activities.firstWhere(
+        (a) => a.id == activityId,
+        orElse: () => null as dynamic,
+      );
+
+      if (activity != null) {
+        final index = _todayProgram!.activities.indexOf(activity);
+        final updated = activity.copyWith(
+          title: title,
+          description: description,
+        );
+        _todayProgram!.activities[index] = updated;
+        notifyListeners();
+      }
+    } on ApiException catch (e) {
+      _error = e.message;
+      notifyListeners();
+      rethrow;
     }
   }
 

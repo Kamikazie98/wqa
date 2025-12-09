@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
+import '../services/notification_service.dart';
+import '../services/service_providers.dart';
 import '../services/smart_reminders_service.dart';
 
 class RemindersManagementPage extends StatefulWidget {
@@ -16,6 +18,13 @@ class _RemindersManagementPageState extends State<RemindersManagementPage> {
   final _searchController = TextEditingController();
   ReminderType? _filterType;
   bool _showOnlyActive = true;
+  late final NotificationService _notificationService;
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationService = serviceProvider.get<NotificationService>();
+  }
 
   @override
   void dispose() {
@@ -215,13 +224,25 @@ class _RemindersManagementPageState extends State<RemindersManagementPage> {
                     if (reminder.isActive)
                       IconButton(
                         icon: const Icon(Icons.pause, size: 20),
-                        onPressed: () => service.pauseReminder(reminder.id),
+                        onPressed: () {
+                          service.pauseReminder(reminder.id);
+                          _notificationService.showLocalNow(
+                            title: 'یادآور موقوف شد',
+                            body: 'یادآور "${reminder.title}" موقوف شد.',
+                          );
+                        },
                         tooltip: 'موقوف کردن',
                       )
                     else
                       IconButton(
                         icon: const Icon(Icons.play_arrow, size: 20),
-                        onPressed: () => service.resumeReminder(reminder.id),
+                        onPressed: () {
+                          service.resumeReminder(reminder.id);
+                           _notificationService.showLocalNow(
+                            title: 'یادآور فعال شد',
+                            body: 'یادآور "${reminder.title}" از سر گرفته شد.',
+                          );
+                        },
                         tooltip: 'ادامه',
                       ),
                     IconButton(
@@ -298,17 +319,14 @@ class _RemindersManagementPageState extends State<RemindersManagementPage> {
   List<SmartReminder> _filterReminders(List<SmartReminder> reminders) {
     var filtered = reminders;
 
-    // فیلتر فعال/غیرفعال
     if (_showOnlyActive) {
       filtered = filtered.where((r) => r.isActive).toList();
     }
 
-    // فیلتر نوع
     if (_filterType != null) {
       filtered = filtered.where((r) => r.type == _filterType).toList();
     }
 
-    // فیلتر جستجو
     if (_searchController.text.isNotEmpty) {
       final query = _searchController.text.toLowerCase();
       filtered = filtered
@@ -324,7 +342,9 @@ class _RemindersManagementPageState extends State<RemindersManagementPage> {
   void _showCreateReminderDialog() {
     showDialog(
       context: context,
-      builder: (context) => const _CreateReminderDialog(),
+      builder: (context) => _CreateReminderDialog(
+        notificationService: _notificationService,
+      ),
     );
   }
 
@@ -345,7 +365,14 @@ class _RemindersManagementPageState extends State<RemindersManagementPage> {
           ),
           TextButton(
             onPressed: () {
+              final reminder = service.getReminder(reminderId);
               service.deleteReminder(reminderId);
+              if (reminder != null) {
+                _notificationService.showLocalNow(
+                  title: 'یادآور حذف شد',
+                  body: 'یادآور "${reminder.title}" حذف شد.',
+                );
+              }
               Navigator.pop(context);
             },
             child: const Text('حذف', style: TextStyle(color: Colors.red)),
@@ -356,9 +383,10 @@ class _RemindersManagementPageState extends State<RemindersManagementPage> {
   }
 }
 
-/// دیالوگ ایجاد یادآوری جدید
 class _CreateReminderDialog extends StatefulWidget {
-  const _CreateReminderDialog();
+  final NotificationService notificationService;
+
+  const _CreateReminderDialog({required this.notificationService});
 
   @override
   State<_CreateReminderDialog> createState() => _CreateReminderDialogState();
@@ -447,15 +475,16 @@ class _CreateReminderDialogState extends State<_CreateReminderDialog> {
             final service = context.read<SmartRemindersService>();
 
             if (_titleController.text.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('عنوان الزامی است')),
+              widget.notificationService.showLocalNow(
+                title: 'خطا',
+                body: 'عنوان الزامی است',
               );
               return;
             }
 
             if (_selectedType == ReminderType.oneTime) {
               final now = DateTime.now();
-              final reminderTime = DateTime(
+              var reminderTime = DateTime(
                 now.year,
                 now.month,
                 now.day,
@@ -464,7 +493,7 @@ class _CreateReminderDialogState extends State<_CreateReminderDialog> {
               );
 
               if (reminderTime.isBefore(now)) {
-                reminderTime.add(const Duration(days: 1));
+                reminderTime = reminderTime.add(const Duration(days: 1));
               }
 
               await service.scheduleOneTimeReminder(
@@ -483,9 +512,10 @@ class _CreateReminderDialogState extends State<_CreateReminderDialog> {
 
             if (mounted) {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('یادآوری ایجاد شد ✅')),
-              );
+               widget.notificationService.showLocalNow(
+                  title: 'یادآوری ایجاد شد ✅',
+                  body: 'یادآور جدید "${_titleController.text}" ایجاد شد.',
+                );
             }
           },
           child: const Text('ایجاد'),
@@ -507,11 +537,11 @@ class _CreateReminderDialogState extends State<_CreateReminderDialog> {
     }
   }
 
-  String _getPatternLabel(ReminderPattern pattern) {
+    String _getPatternLabel(ReminderPattern pattern) {
     switch (pattern) {
       case ReminderPattern.daily:
         return 'روزانه';
-      case ReminderPattern.everyTwoDays:
+      case ReminderPoint.everyTwoDays:
         return 'دو روز یک‌بار';
       case ReminderPattern.weekly:
         return 'هفتگی';

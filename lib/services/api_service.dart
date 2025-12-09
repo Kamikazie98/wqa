@@ -5,9 +5,11 @@ import 'goal_suggestion_service.dart';
 
 class ApiService {
   final ApiClient _apiClient;
-  final GoalSuggestionService _goalSuggestionService;
+  late final GoalSuggestionService _goalSuggestionService;
 
-  ApiService(this._apiClient) : _goalSuggestionService = GoalSuggestionService(this);
+  ApiService(this._apiClient) {
+    _goalSuggestionService = GoalSuggestionService(_apiClient);
+  }
 
   Future<List<Goal>> getGoalSuggestions() {
     return _goalSuggestionService.getGoalSuggestions();
@@ -17,21 +19,7 @@ class ApiService {
   Future<UserProfile> setupUserProfile(UserProfile userProfile) => _apiClient.setupUserProfile(userProfile);
   Future<UserProfile> getUserProfile() => _apiClient.getUserProfile();
   Future<UserProfile> updateUserProfile(UserProfile userProfile) => _apiClient.updateUserProfile(userProfile);
+  Future<List<Habit>> getHabits() => _apiClient.getHabits();
+  Future<List<UserGoal>> getGoals() => _apiClient.getGoals();
 
-  Future<List<Group>> getGroups() async {
-    // Mock data for now
-    await Future.delayed(const Duration(seconds: 1));
-    return [
-      Group(id: '1', name: 'Family', description: 'Family group'),
-      Group(id: '2', name: 'Friends', description: 'Friends group'),
-    ];
-  }
-}
-
-class Group {
-  final String id;
-  final String name;
-  final String description;
-
-  Group({required this.id, required this.name, required this.description});
 }

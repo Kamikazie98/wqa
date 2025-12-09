@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../services/daily_program_optimizer_service.dart';
+import '../models/daily_program_models.dart';
+import '../services/daily_program_service.dart';
 import '../services/service_providers.dart';
+
+
 
 /// Daily Program Display Widget
 class DailyProgramWidget extends ConsumerWidget {
@@ -12,7 +15,7 @@ class DailyProgramWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final programAsync = ref.watch(todayProgramProvider);
-    final programService = ref.watch(dailyProgramOptimizerServiceProvider);
+    final programService = ref.watch(dailyProgramServiceProvider);
 
     return programAsync.when(
       data: (program) {
@@ -24,17 +27,23 @@ class DailyProgramWidget extends ConsumerWidget {
                 Icon(Icons.schedule, size: 64, color: Colors.grey.shade300),
                 const SizedBox(height: 16),
                 Text(
-                  'برنامه امروز موجود نیست',
+                  'No program for today',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () async {
+                    // This is a simplified call, you might need more user data
                     await programService.generateDailyProgram(
+                      profile: ref.read(userProfileProvider), // Example: get user profile
+                      goals: ref.read(userGoalsProvider),     // Example: get user goals
+                      habits: ref.read(userHabitsProvider),    // Example: get user habits
+                      currentMood: 0.5, // Example: get current mood
+                      currentEnergy: 0.7, // Example: get current energy
                       date: DateTime.now(),
                     );
                   },
-                  child: const Text('تولید برنامه'),
+                  child: const Text('Generate Program'),
                 ),
               ],
             ),
@@ -51,7 +60,7 @@ class DailyProgramWidget extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'برنامه امروز',
+                    'Today\'s Program',
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 8),
@@ -59,27 +68,10 @@ class DailyProgramWidget extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'تاریخ: ${DateFormat('yyyy/MM/dd', 'fa_IR').format(program.date)}',
+                        'Date: ${DateFormat('yyyy/MM/dd').format(program.date)}',
                         style: const TextStyle(fontSize: 14),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'تمرکز: ${program.focusArea}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
                     ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'مدت زمان تخمینی: ${program.estimatedCompletionMinutes} دقیقه',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
               ),
@@ -88,55 +80,28 @@ class DailyProgramWidget extends ConsumerWidget {
             // Time Blocks
             Expanded(
               child: ListView.builder(
-                itemCount: program.timeBlocks.length,
+                itemCount: program.activities.length,
                 itemBuilder: (context, index) {
-                  final block = program.timeBlocks[index];
+                  final activity = program.activities[index];
                   return TimeBlockItem(
-                    block: block,
-                    programId: program.programId,
+                    block: activity,
+                    programId: program.id, // Assuming program has an id
                   );
                 },
               ),
             ),
-            // Tips Section
-            if (program.optimizationTips.isNotEmpty) ...[
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'نکات بهتری برای امروز:',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border:
-                            Border.all(color: Colors.amber.withOpacity(0.3)),
-                      ),
-                      child: Text(program.optimizationTips),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ],
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('خطا: $error')),
+      error: (error, stack) => Center(child: Text('Error: $error')),
     );
   }
 }
 
 /// Individual Time Block
 class TimeBlockItem extends ConsumerWidget {
-  final TimeBlock block;
+  final ProgramActivity block;
   final String programId;
 
   const TimeBlockItem({
@@ -147,53 +112,17 @@ class TimeBlockItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final programService = ref.watch(dailyProgramOptimizerServiceProvider);
-
-    Color statusColor() {
-      switch (block.status) {
-        case 'completed':
-          return Colors.green;
-        case 'in_progress':
-          return Colors.blue;
-        case 'pending':
-          return Colors.orange;
-        case 'skipped':
-          return Colors.grey;
-        default:
-          return Colors.grey;
-      }
-    }
-
-    String statusLabel() {
-      switch (block.status) {
-        case 'completed':
-          return 'تکمیل شده';
-        case 'in_progress':
-          return 'در حال انجام';
-        case 'pending':
-          return 'منتظر';
-        case 'skipped':
-          return 'صرف نظر شده';
-        default:
-          return 'نامشخص';
-      }
-    }
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: ListTile(
-        leading: Container(
-          width: 4,
-          color: statusColor(),
-        ),
         title: Text(block.title),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
             Text(
-              '${DateFormat('HH:mm', 'fa_IR').format(block.startTime)} - '
-              '${block.durationMinutes} دقیقه',
+              '${DateFormat('HH:mm').format(block.startTime)} - ${block.endTime.difference(block.startTime).inMinutes} min',
               style: const TextStyle(fontSize: 12),
             ),
             if (block.description != null) ...[
@@ -207,21 +136,6 @@ class TimeBlockItem extends ConsumerWidget {
             ],
           ],
         ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: statusColor().withOpacity(0.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            statusLabel(),
-            style: TextStyle(
-              fontSize: 11,
-              color: statusColor(),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
         onTap: () {
           _showBlockOptions(context, ref);
         },
@@ -230,7 +144,7 @@ class TimeBlockItem extends ConsumerWidget {
   }
 
   void _showBlockOptions(BuildContext context, WidgetRef ref) {
-    final programService = ref.watch(dailyProgramOptimizerServiceProvider);
+    final programService = ref.watch(dailyProgramServiceProvider);
 
     showModalBottomSheet(
       context: context,
@@ -240,38 +154,26 @@ class TimeBlockItem extends ConsumerWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.check),
-              title: const Text('تکمیل'),
+              title: const Text('Complete'),
               onTap: () async {
                 Navigator.pop(context);
-                await programService.completeBlock(programId, block.blockId);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.play_arrow),
-              title: const Text('شروع'),
-              onTap: () async {
-                Navigator.pop(context);
-                await programService.completeBlock(
-                  programId,
-                  block.blockId,
-                  actualDurationMinutes: 0,
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.skip_next),
-              title: const Text('صرف نظر'),
-              onTap: () async {
-                Navigator.pop(context);
-                await programService.skipBlock(programId, block.blockId);
+                await programService.completeActivity(activityId: block.id, completed: true);
               },
             ),
             ListTile(
               leading: const Icon(Icons.edit),
-              title: const Text('ویرایش'),
+              title: const Text('Edit'),
               onTap: () {
                 Navigator.pop(context);
-                // Show edit dialog
+                _showEditDialog(context, ref);
+              },
+            ),
+             ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Text('Remove'),
+              onTap: () async {
+                Navigator.pop(context);
+                await programService.removeActivity(block.id);
               },
             ),
           ],
@@ -279,138 +181,47 @@ class TimeBlockItem extends ConsumerWidget {
       ),
     );
   }
-}
 
-/// Daily Program Generator Widget
-class DailyProgramGeneratorWidget extends ConsumerStatefulWidget {
-  const DailyProgramGeneratorWidget({Key? key}) : super(key: key);
+  void _showEditDialog(BuildContext context, WidgetRef ref) {
+    final programService = ref.read(dailyProgramServiceProvider);
+    final _titleController = TextEditingController(text: block.title);
+    final _descriptionController = TextEditingController(text: block.description);
 
-  @override
-  ConsumerState<DailyProgramGeneratorWidget> createState() =>
-      _DailyProgramGeneratorWidgetState();
-}
-
-class _DailyProgramGeneratorWidgetState
-    extends ConsumerState<DailyProgramGeneratorWidget> {
-  String? selectedMood;
-  String? selectedEnergy;
-  String? selectedFocus;
-
-  @override
-  Widget build(BuildContext context) {
-    final programService = ref.watch(dailyProgramOptimizerServiceProvider);
-    final optimizationStatus = ref.watch(
-      StreamProvider((fRef) => programService.optimizationStatusStream),
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'تولید برنامه شخصی‌شده',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              // Mood Selection
-              Text('روحیه شما امروز:',
-                  style: Theme.of(context).textTheme.bodySmall),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: ['خیلی بد', 'بد', 'متوسط', 'خوب', 'عالی'].map((mood) {
-                  return ChoiceChip(
-                    label: Text(mood),
-                    selected: selectedMood == mood,
-                    onSelected: (selected) {
-                      setState(() => selectedMood = selected ? mood : null);
-                    },
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
-              // Energy Selection
-              Text('انرژی شما:', style: Theme.of(context).textTheme.bodySmall),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: ['پایین', 'متوسط', 'بالا'].map((energy) {
-                  return ChoiceChip(
-                    label: Text(energy),
-                    selected: selectedEnergy == energy,
-                    onSelected: (selected) {
-                      setState(() => selectedEnergy = selected ? energy : null);
-                    },
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
-              // Focus Area Selection
-              Text('تمرکز برای امروز:',
-                  style: Theme.of(context).textTheme.bodySmall),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: ['کار', 'سلامت', 'یادگیری', 'شخصی'].map((focus) {
-                  return ChoiceChip(
-                    label: Text(focus),
-                    selected: selectedFocus == focus,
-                    onSelected: (selected) {
-                      setState(() => selectedFocus = selected ? focus : null);
-                    },
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 24),
-              // Generate Button
-              optimizationStatus.when(
-                data: (status) {
-                  final isGenerating = status.status == 'generating' ||
-                      status.status == 'processing';
-
-                  return SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: isGenerating
-                          ? null
-                          : () async {
-                              await programService.generateDailyProgram(
-                                date: DateTime.now(),
-                                moodLevel: selectedMood,
-                                energyLevel: selectedEnergy,
-                                focusArea: selectedFocus,
-                              );
-                            },
-                      icon: isGenerating
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.auto_awesome),
-                      label: Text(
-                        isGenerating ? 'در حال تولید...' : 'تولید برنامه',
-                      ),
-                    ),
-                  );
-                },
-                loading: () => const SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: null,
-                    child: Text('در حال بارگذاری...'),
-                  ),
-                ),
-                error: (error, stack) => Center(child: Text('خطا: $error')),
-              ),
-            ],
-          ),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Activity'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(labelText: 'Title'),
+            ),
+            TextField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(labelText: 'Description'),
+            ),
+          ],
         ),
-      ],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await programService.editActivity(
+                activityId: block.id,
+                title: _titleController.text,
+                description: _descriptionController.text,
+              );
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
     );
   }
 }

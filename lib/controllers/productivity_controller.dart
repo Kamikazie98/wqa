@@ -1,33 +1,33 @@
 
-import 'package:riverpod/riverpod.dart';
+import 'package:flutter/material.dart';
+import '../models/user_models.dart';
+import '../services/goal_suggestion_service.dart';
 
-import '../models/daily_program_models.dart';
-import '../services/api_service.dart';
-import '../services/service_providers.dart';
+class ProductivityController extends ChangeNotifier {
+  final GoalSuggestionService _goalSuggestionService;
 
-// Provider for the ProductivityController
-final productivityControllerProvider = StateNotifierProvider<
-    ProductivityController, AsyncValue<SchedulingAnalysis>>((ref) {
-  final apiService = ref.watch(apiServiceProvider);
-  return ProductivityController(apiService);
-});
-
-class ProductivityController
-    extends StateNotifier<AsyncValue<SchedulingAnalysis>> {
-  final ApiService _apiService;
-
-  ProductivityController(this._apiService)
-      : super(const AsyncValue.loading()) {
-    analyzeScheduling();
+  ProductivityController(this._goalSuggestionService) {
+    fetchGoalSuggestions();
   }
 
-  Future<void> analyzeScheduling() async {
+  List<Goal> _goalSuggestions = [];
+  List<Goal> get goalSuggestions => _goalSuggestions;
+
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+
+  Future<void> fetchGoalSuggestions() async {
+    _isLoading = true;
+    notifyListeners();
+
     try {
-      state = const AsyncValue.loading();
-      final analysis = await _apiService.analyzeScheduling();
-      state = AsyncValue.data(analysis);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      _goalSuggestions = await _goalSuggestionService.getGoalSuggestions();
+    } catch (e) {
+      // Handle error
+      print(e);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 }

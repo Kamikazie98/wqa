@@ -13,8 +13,8 @@ import 'controllers/assistant_controller.dart';
 import 'controllers/habit_controller.dart';
 import 'controllers/productivity_controller.dart';
 import 'controllers/activity_controller.dart';
-import 'controllers/groups_controller.dart';
 import 'services/api_client.dart';
+import 'services/api_service.dart';
 import 'services/assistant_service.dart';
 import 'services/action_executor.dart';
 import 'services/automation_service.dart';
@@ -34,11 +34,11 @@ import 'services/message_analysis_service.dart';
 import 'services/chat_analysis_service.dart';
 import 'services/smart_reminders_service.dart';
 import 'services/notification_triage_service.dart';
+import 'services/goal_suggestion_service.dart';
 import 'screens/permissions_screen.dart';
 import 'screens/habits_screen.dart';
 import 'screens/productivity_screen.dart';
 import 'screens/activity_screen.dart';
-import 'screens/groups_screen.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -66,6 +66,7 @@ Future<void> main() async {
 
   final authController = AuthController(prefs: prefs);
   final apiClient = ApiClient(tokenProvider: () => authController.token);
+  final apiService = ApiService(apiClient);
   final assistantService = AssistantService(apiClient: apiClient);
   authController.attachApiClient(apiClient);
 
@@ -95,7 +96,7 @@ Future<void> main() async {
   final proactiveAutomation = ProactiveAutomationService(
     prefs: prefs,
   );
-  final localNLP = LocalNLPProcessor();
+  final localNLP = LocalNLPProcessor(prefs);
   final analytics = AnalyticsService(prefs: prefs);
 
   // Initialize Phase 2 services (Daily Program & Smart Scheduling)
@@ -127,10 +128,12 @@ Future<void> main() async {
   // Start proactive learning
   proactiveAutomation.startLearning();
 
+  final goalSuggestionService = GoalSuggestionService(apiClient, localNLP, prefs);
+
   runApp(
     WaiqRootApp(
       authController: authController,
-      apiClient: apiClient,
+      apiService: apiService, // Use apiService
       assistantService: assistantService,
       notificationService: notificationService,
       automationService: automationService,
@@ -150,6 +153,7 @@ Future<void> main() async {
       chatAnalysisService: chatAnalysisService,
       smartRemindersService: smartRemindersService,
       notificationTriageService: notificationTriageService,
+      goalSuggestionService: goalSuggestionService,
     ),
   );
 }
@@ -157,7 +161,7 @@ Future<void> main() async {
 /// روت اپ که هم Providerها رو ستاپ می‌کنه هم فلوی Permissions → App رو مدیریت می‌کنه.
 class WaiqRootApp extends StatelessWidget {
   final AuthController authController;
-  final ApiClient apiClient;
+  final ApiService apiService;
   final AssistantService assistantService;
   final NotificationService notificationService;
   final AutomationService automationService;
@@ -177,11 +181,12 @@ class WaiqRootApp extends StatelessWidget {
   final ChatAnalysisService chatAnalysisService;
   final SmartRemindersService smartRemindersService;
   final NotificationTriageService notificationTriageService;
+  final GoalSuggestionService goalSuggestionService;
 
   const WaiqRootApp({
     super.key,
     required this.authController,
-    required this.apiClient,
+    required this.apiService,
     required this.assistantService,
     required this.notificationService,
     required this.automationService,
@@ -201,6 +206,7 @@ class WaiqRootApp extends StatelessWidget {
     required this.chatAnalysisService,
     required this.smartRemindersService,
     required this.notificationTriageService,
+    required this.goalSuggestionService,
   });
 
   @override
@@ -208,7 +214,7 @@ class WaiqRootApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthController>.value(value: authController),
-        Provider<ApiClient>.value(value: apiClient),
+        Provider<ApiService>.value(value: apiService), // Provide ApiService
         Provider<AssistantService>.value(value: assistantService),
         Provider<ActionExecutor>.value(value: actionExecutor),
         Provider<NotificationService>.value(value: notificationService),
@@ -221,13 +227,10 @@ class WaiqRootApp extends StatelessWidget {
           create: (_) => HabitController(Provider.of<ApiService>(context, listen: false)),
         ),
         ChangeNotifierProvider<ProductivityController>(
-          create: (_) => ProductivityController(Provider.of<ApiService>(context, listen: false)),
+          create: (_) => ProductivityController(goalSuggestionService),
         ),
         ChangeNotifierProvider<ActivityController>(
           create: (_) => ActivityController(Provider.of<ApiService>(context, listen: false)),
-        ),
-        ChangeNotifierProvider<GroupsController>(
-          create: (_) => GroupsController(Provider.of<ApiService>(context, listen: false)),
         ),
         // New AI/NLP services
         Provider<ConversationMemoryService>.value(value: conversationMemory),
@@ -256,6 +259,7 @@ class WaiqRootApp extends StatelessWidget {
         ),
         Provider<NotificationTriageService>.value(
             value: notificationTriageService),
+        Provider<GoalSuggestionService>.value(value: goalSuggestionService),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -285,7 +289,7 @@ class WaiqRootApp extends StatelessWidget {
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
+              shape: RoundedRectangleBody(
                 borderRadius: BorderRadius.circular(999),
               ),
             ),
@@ -304,7 +308,6 @@ class WaiqRootApp extends StatelessWidget {
           '/habits': (context) => const HabitsScreen(),
           '/productivity': (context) => const ProductivityScreen(),
           '/activity': (context) => const ActivityScreen(),
-          '/groups': (context) => const GroupsScreen(),
         },
       ),
     );

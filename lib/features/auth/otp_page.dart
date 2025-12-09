@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../constants/brand.dart';
 import '../../controllers/auth_controller.dart';
 import '../../services/exceptions.dart';
+import '../../services/notification_service.dart';
+import '../../services/service_providers.dart';
 import '../../services/user_profile_service.dart';
 import '../../widgets/brand_badge.dart';
 import '../../widgets/improved_button.dart';
@@ -23,6 +25,13 @@ class _OtpPageState extends State<OtpPage> {
   final _codeController = TextEditingController();
   int _step = 0;
   String? _status;
+  late final NotificationService _notificationService;
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationService = serviceProvider.get<NotificationService>();
+  }
 
   @override
   void dispose() {
@@ -235,6 +244,10 @@ class _OtpPageState extends State<OtpPage> {
         _status = detail;
         _step = 1;
       });
+      _notificationService.showLocalNow(
+        title: 'کد تایید ارسال شد',
+        body: detail,
+      );
     } catch (error) {
       _showError(error);
     }
@@ -260,8 +273,7 @@ class _OtpPageState extends State<OtpPage> {
   void _showError(Object error) {
     final message =
         error is ApiException ? error.message : 'خطای ناشناخته رخ داد.';
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    _notificationService.showLocalNow(title: 'خطا', body: message);
   }
 
   String _normalizePhone(String phone) {

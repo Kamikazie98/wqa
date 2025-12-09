@@ -1,11 +1,18 @@
+
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fuzzy/fuzzy.dart';
 
 /// Enhanced local NLP processor with semantic understanding and context awareness
 class LocalNLPProcessor {
+  final SharedPreferences _prefs;
+
   // Context storage for sequential user inputs
   final List<String> _recentInputs = [];
   final Map<String, dynamic> _userContext = {};
   static const int _maxContextLength = 5;
+
+  LocalNLPProcessor(this._prefs);
 
   /// Classify user intent locally before sending to API
   /// This reduces API calls for common/simple intents
@@ -669,5 +676,20 @@ class LocalNLPProcessor {
     return locationPatterns
         .where((loc) => text.toLowerCase().contains(loc.toLowerCase()))
         .toList();
+  }
+
+  // Methods for learning from user feedback
+  Future<void> recordGoalFeedback(String goalId, bool liked) async {
+    final feedback = getGoalFeedback();
+    feedback[goalId] = liked;
+    await _prefs.setString('goal_feedback', jsonEncode(feedback));
+  }
+
+  Map<String, bool> getGoalFeedback() {
+    final feedbackString = _prefs.getString('goal_feedback');
+    if (feedbackString != null) {
+      return Map<String, bool>.from(jsonDecode(feedbackString));
+    }
+    return {};
   }
 }

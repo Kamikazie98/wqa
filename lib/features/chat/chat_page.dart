@@ -10,6 +10,8 @@ import '../../controllers/assistant_controller.dart';
 import '../../models/assistant_models.dart';
 import '../../services/action_executor.dart';
 import '../../services/api_client.dart';
+import '../../services/notification_service.dart';
+import '../../services/service_providers.dart';
 import 'widgets/message_bubble.dart';
 import 'widgets/session_sidebar.dart';
 
@@ -443,6 +445,7 @@ class _InputBarState extends State<_InputBar> {
   stt.SpeechToText? _speech;
   bool _speechAvailable = false;
   bool _listening = false;
+  late final NotificationService _notificationService;
 
   static const _maxFileSize = 10 * 1024 * 1024; // 10MB
   static const _allowedExtensions = <String>[
@@ -459,6 +462,12 @@ class _InputBarState extends State<_InputBar> {
     'webp',
     'gif',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationService = serviceProvider.get<NotificationService>();
+  }
 
   @override
   void dispose() {
@@ -725,20 +734,23 @@ class _InputBarState extends State<_InputBar> {
       final intent = await assistant.detectIntent(request);
       if (intent == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('نیت تشخیص داده نشد')),
+        _notificationService.showLocalNow(
+          title: 'خطا',
+          body: 'نیت تشخیص داده نشد',
         );
         return;
       }
       await executor.execute(intent);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('عمل اجرا شد: ${intent.action.name}')),
+      _notificationService.showLocalNow(
+        title: 'عملیات هوشمند',
+        body: 'عمل اجرا شد: ${intent.action.name}',
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطا: $e')),
+      _notificationService.showLocalNow(
+        title: 'خطا',
+        body: e.toString(),
       );
     } finally {
       if (mounted) {
@@ -757,15 +769,17 @@ class _InputBarState extends State<_InputBar> {
     _speechAvailable = await _speech!.initialize(
       onError: (error) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطا در تشخیص صدا: ${error.errorMsg}')),
+        _notificationService.showLocalNow(
+          title: 'خطای تشخیص صدا',
+          body: error.errorMsg,
         );
       },
     );
     if (!_speechAvailable) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('خدمات تشخیص گفتار در دسترس نیست')),
+        _notificationService.showLocalNow(
+          title: 'خطا',
+          body: 'خدمات تشخیص گفتار در دسترس نیست',
         );
       }
       return;
@@ -854,8 +868,10 @@ class _InputBarState extends State<_InputBar> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    _notificationService.showLocalNow(
+      title: 'خطا',
+      body: message,
+    );
   }
 }
 
