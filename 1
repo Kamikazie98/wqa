@@ -1,0 +1,40 @@
+    try {
+      list = jsonDecode(rawBuffer) as List<dynamic>;
+    } catch (_) {
+      list = <dynamic>[];
+    }
+    if (list.isEmpty) return;
+    await prefs.setString('notif.buffer', '[]');
+    await prefs.setString('flutter.notif.buffer', '[]');
+
+    final apiClient = ApiClient(tokenProvider: () => token);
+    final assistantService = AssistantService(apiClient: apiClient);
+
+    // فقط آخرین پیام را تحلیل می‌کنیم تا فراخوان کم باشد
+    final latest = Map<String, dynamic>.from(list.last as Map);
+    final message =
+        latest['body']?.toString() ?? latest['title']?.toString() ?? '';
+    if (message.isEmpty) return;
+
+    final result = await assistantService.inboxIntel(
+  InboxIntelRequest(
+    message: message,
+    channel: (latest['pkg']?.toString().isNotEmpty == true 
+        ? latest['pkg']!.toString()
+        : 'notification'),
+  ),
+);
+
+    final action = result.actions.isNotEmpty ? result.actions.first : null;
+    final body = action != null
+        ? '${result.summary}\nپیشنهاد: ${action.type} - ${action.suggestedText}'
+        : result.summary;
+    await notificationService.showLocalNow(
+      title: 'هوش پیام',
+      body: body,
+      payload: action?.suggestedText ?? result.rawText,
+    );
+  } catch (_) {
+    // ignore
+  }
+}

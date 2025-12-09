@@ -1,0 +1,181 @@
+{
+  "project_info": {
+    "project_number": "744042224874",
+    "project_id": "gerdoo-e725c",
+    "storage_bucket": "gerdoo-e725c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:744042224874:android:f544c4f664cd26be66cb93",
+        "android_client_info": {
+          "package_name": "com.example.waiq"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1SMUciZvM3udbCZk1syO3J29T5-Sl6PM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:744042224874:android:b65c2d6e91a2049c66cb93",
+        "android_client_info": {
+          "package_name": "com.gerdoo.app.clickapps"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1SMUciZvM3udbCZk1syO3J29T5-Sl6PM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:744042224874:android:774e0289d12b3dfa66cb93",
+        "android_client_info": {
+          "package_name": "com.gerdoo.app.clickapps.bombo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1SMUciZvM3udbCZk1syO3J29T5-Sl6PM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:744042224874:android:f32ae110f8be2e3466cb93",
+        "android_client_info": {
+          "package_name": "com.gerdoo.app.clickapps.delta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1SMUciZvM3udbCZk1syO3J29T5-Sl6PM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:744042224874:android:93db0332e41884cf66cb93",
+        "android_client_info": {
+          "package_name": "com.gerdoo.app.clickapps.demo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1SMUciZvM3udbCZk1syO3J29T5-Sl6PM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:744042224874:android:1680f7a27265c83f66cb93",
+        "android_client_info": {
+          "package_name": "com.gerdoo.app.clickapps.ghatrankave"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1SMUciZvM3udbCZk1syO3J29T5-Sl6PM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:744042224874:android:c04bef9d4b5bd51866cb93",
+        "android_client_info": {
+          "package_name": "com.gerdoo.app.clickapps.karamad"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1SMUciZvM3udbCZk1syO3J29T5-Sl6PM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:744042224874:android:259450586383f08566cb93",
+        "android_client_info": {
+          "package_name": "com.gerdoo.app.clickapps.saber"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1SMUciZvM3udbCZk1syO3J29T5-Sl6PM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:744042224874:android:1f310d9f1a5c57cb66cb93",
+        "android_client_info": {
+          "package_name": "com.gerdoo.app.clickapps.safepart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1SMUciZvM3udbCZk1syO3J29T5-Sl6PM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

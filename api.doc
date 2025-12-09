@@ -1,0 +1,231 @@
+# راهنمای API سرویس
+
+- **Base URL**: مطابق سرویس FastAPI در `app.py` (مثلاً `https://your-domain.com` یا `http://localhost:8000`)
+- **Header پیش‌فرض**: `Content-Type: application/json`
+- **احراز هویت**: بیشتر endpointها نیاز به `Authorization: Bearer <access_token>` دارند.
+  - دسترسی اولیه از طریق OTP (مراحل در بخش «احراز هویت»).
+  - توکن دسترسی HS256 است و در تمام درخواست‌های محافظت‌شده استفاده می‌شود.
+- **زبان پیش‌فرض محتوا**: `fa` (فارسی)، مگر این‌که در Body مقدار دیگری ارسال شود.
+- **Streaming**: `POST /chat/stream` خروجی را با SSE (`text/event-stream`) برمی‌گرداند.
+
+## احراز هویت
+
+### 1) درخواست OTP
+- **POST** `/auth/request-otp`
+- **Body**:
+  ```json
+  { "phone": "<شماره موبایل>" }
+  ```
+  شماره با `+` شروع می‌شود؛ اگر `0` یا `00` بفرستید خودکار به قالب بین‌المللی (پیش‌فرض +98) تبدیل می‌شود.
+- **پاسخ نمونه**:
+  ```json
+  { "detail": "...", "otp_token": "<otp_jwt>" }
+  ```
+- **نکات**: خنک‌سازی ارسال مجدد (`OTP_RESEND_COOLDOWN` پیش‌فرض 60 ثانیه). OTP شش رقمی و 5 تلاش مجاز.
+
+### 2) تایید OTP و دریافت توکن دسترسی
+- **POST** `/auth/verify-otp`
+- **Headers**: `Authorization: Bearer <otp_token>` (از مرحله قبلی)
+- **Body**:
+  ```json
+  { "phone": "<همان شماره>", "code": "<کد شش رقمی>" }
+  ```
+- **پاسخ**:
+  ```json
+  { "token": "<access_token>", "user_id": 1, "phone": "+98..." }
+  ```
+- از این پس در تمام endpointهای محافظت‌شده از `Authorization: Bearer <access_token>` استفاده کنید.
+
+## اطلاعات نسخه
+- **POST** `/app/check-version` *(بدون احراز هویت)*
+- **Body**:
+  ```json
+  { "version": "1.0.0" }
+  ```
+- **پاسخ**:
+  ```json
+  { "update_required": true|false, "latest_version": "1.0.0", "download_url": "<لینک در صورت نیاز>" }
+  ```
+
+## چت و استریم
+- **POST** `/chat/stream` *(احراز هویت لازم، SSE)*
+- **Headers**: `Accept: text/event-stream`
+- **Body**:
+  ```json
+  {
+    "messages": [ { "role": "user|assistant|system", "content": "..." } ],
+    "session_id": "optional-string",
+    "reset": false,
+    "web_search": false
+  }
+  ```
+  - `session_id` برای نگه‌داشت دیالوگ؛ `reset=true` تاریخچه را پاک می‌کند.
+  - `web_search=true` متن آخرین پیام کاربر را با نتایج جست‌وجوی گوگل غنی می‌کند.
+- **رویدادهای SSE**:
+  - `meta`: تلاش فعلی مدل/Provider
+  - `warn`: خطای هر تلاش
+  - `token`: توکن‌های متنی تولیدشده (`{"text": "..."}`)
+  - `ping`: هر ~15 ثانیه
+  - `done`: پایان جریان؛ شامل `latency_ms`, `model`, `provider`, `text`, و در صورت وجود `sources`
+  - `error`: شکست نهایی
+
+## ابزارها (Tools)
+
+### Web Search
+- **POST** `/tools/web-search` *(احراز هویت لازم)*
+- **Body**:
+  ```json
+  { "query": "...", "language": "fa", "max_sources": 3, "temperature": 0.0 }
+  ```
+- **پاسخ**:
+  ```json
+  {
+    "query": "...",
+    "answer": "...",
+    "model": "...",
+    "provider": "...",
+    "sources": [ { "title": "...", "url": "...", "text": "..." } ]
+  }
+  ```
+  اگر `web_search` طرف Provider نیاز شود، به‌صورت خودکار فعال می‌شود.
+
+### Web Scrape
+- **POST** `/tools/web-scrape` *(احراز هویت لازم)*
+- **Body**:
+  ```json
+  { "url": "...", "limit": 2000, "summarize": true, "summary_prompt": "اختیاری" }
+  ```
+- **پاسخ**:
+  ```json
+  { "url": "...", "title": "...", "text": "...", "summary": "...", "model": "...", "provider": "..." }
+  ```
+  `text` با حد طول `limit` کوتاه می‌شود. اگر `summarize=false` باشد `summary` تهی است.
+
+### Image Generation
+- **POST** `/tools/image-generation` *(احراز هویت لازم)*
+- **Body**:
+  ```json
+  {
+    "prompt": "...",
+    "model": "اختیاری",
+    "provider": "اختیاری",
+    "response_format": "url | b64_json",
+    "size": "اختیاری",
+    "n": 1
+  }
+  ```
+- **پاسخ**:
+  ```json
+  {
+    "model": "...",
+    "provider": "...",
+    "images": [ { "url": "...", "b64_json": "...", "metadata": { } } ]
+  }
+  ```
+
+## محتوای اینستاگرام
+
+### ایده‌سازی
+- **POST** `/instagram/ideas` *(احراز هویت لازم)*
+- **Body**:
+  ```json
+  { "topic": "...", "audience": "اختیاری", "goals": "اختیاری", "language": "fa" }
+  ```
+- **پاسخ**:
+  ```json
+  { "topic": "...", "ideas": [ { ... } ], "raw_text": "خروجی کامل مدل" }
+  ```
+
+### تقویم محتوایی
+- **POST** `/instagram/content-calendar` *(احراز هویت لازم)*
+- **Body**:
+  ```json
+  {
+    "idea": "...",
+    "duration_weeks": 4,
+    "posts_per_week": 3,
+    "pillars": ["اختیاری"],
+    "include_reels": true,
+    "language": "fa"
+  }
+  ```
+- **پاسخ**:
+  ```json
+  {
+    "idea": "...",
+    "duration_weeks": 4,
+    "posts_per_week": 3,
+    "entries": [ { "day": "...", "hook": "...", "format": "...", "outline": "...", "cta": "...", "notes": "..." } ],
+    "raw_text": "خروجی کامل مدل"
+  }
+  ```
+
+## تحقیق و پژوهش
+- **POST** `/research/deep` *(احراز هویت لازم)*
+- **Body**:
+  ```json
+  {
+    "query": "...",
+    "depth": "summary | detailed | comprehensive",
+    "audience": "اختیاری",
+    "language": "fa",
+    "include_outline": true,
+    "include_sources": true
+  }
+  ```
+- **پاسخ**:
+  ```json
+  {
+    "query": "...",
+    "depth": "...",
+    "summary": "...",
+    "sections": [ { "title": "...", "summary": "...", "takeaways": ["..."], "sources": [ { ... } ] } ],
+    "outline": [ "..." ],
+    "sources": [ { ... } ],   // ترکیب AI + گوگل در صورت فعال بودن
+    "raw_text": "خروجی کامل مدل"
+  }
+  ```
+
+## Agent Tasks
+
+### ایجاد مقاله/ماموریت
+- **POST** `/agents/tasks` *(احراز هویت لازم)*
+- **Body**:
+  ```json
+  {
+    "title": "...",
+    "brief": "...",
+    "audience": "اختیاری",
+    "tone": "اختیاری",
+    "language": "fa",
+    "outline": ["اختیاری"],
+    "word_count": 1200,
+    "include_research": true
+  }
+  ```
+- **پاسخ** (`AgentTaskResponse`):
+  ```json
+  {
+    "id": 1,
+    "title": "...",
+    "status": "completed | failed | processing",
+    "result_text": "متن مقاله در صورت موفقیت",
+    "language": "fa",
+    "outline": ["..."],
+    "created_at": "...",
+    "updated_at": "...",
+    "last_error": "پیام خطا در صورت شکست"
+  }
+  ```
+  پردازش در همان درخواست انجام می‌شود؛ وضعیت معمولاً `completed` یا `failed` خواهد بود.
+
+### فهرست همه مأموریت‌ها
+- **GET** `/agents/tasks` *(احراز هویت لازم)*
+- **پاسخ**: آرایه‌ای از `AgentTaskResponse` فقط برای کاربر فعلی.
+
+### دریافت یک مأموریت
+- **GET** `/agents/tasks/{task_id}` *(احراز هویت لازم)*
+- **پاسخ**: `AgentTaskResponse` اگر متعلق به همان کاربر باشد؛ در غیر این‌صورت 404.
+
+---
+برای هر درخواست، در صورت نیاز به وب‌جست‌وجو/خلاصه‌سازی، پارامترهای مربوطه در Body مشخص شده‌اند. در صورت وجود سوال یا نیاز به مثال‌های بیشتر، اعلام کنید.
